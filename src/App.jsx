@@ -31,7 +31,7 @@ export default function App() {
 
     try {
       const response = await axios.post(
-        "/v1/chat/chat",
+        "/v1/chat",
         {
           user_id: userId,
           user_message: input,
