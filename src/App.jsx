@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from './services/axios';
 import {
     TextField,
   Button,
@@ -7,7 +8,6 @@ import {
   Paper,
   CircularProgress,
 } from "@mui/material";
-import axios from "axios";
 import { motion } from "framer-motion";
 
 export default function App() {
@@ -31,7 +31,7 @@ export default function App() {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/v1/chat/chat",
+        "/v1/chat/chat",
         {
           user_id: userId,
           user_message: input,
