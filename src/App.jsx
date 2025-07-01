@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "./services/axios";
 import placeholder from "./assets/ingredients/placeholder.jpg";
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
+import Popover from '@mui/material/Popover';
+import DeleteIcon from "@mui/icons-material/Delete";
+import HistoryIcon from "@mui/icons-material/History";
 
 import {
   AppBar,
@@ -31,6 +37,11 @@ const images = import.meta.glob("./assets/ingredients/*.jpg", {
 });
 
 export default function App() {
+  const [cartAnchorEl, setCartAnchorEl] = useState(null);
+
+  const cartOpen = Boolean(cartAnchorEl);
+
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -134,11 +145,26 @@ export default function App() {
   const removeFromCart = (index) => {
     setCart((prev) => prev.filter((_, i) => i !== index));
   };
+  const cartGroupedByStore = cart.reduce((acc, item) => {
+    if (!acc[item.store]) {
+      acc[item.store] = [];
+    }
+    acc[item.store].push(item);
+    return acc;
+  }, {});
+
 
   const totalCost = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+  const handleCartClick = (event) => {
+    setCartAnchorEl(event.currentTarget);
+  };
+
+  const handleCartClose = () => {
+    setCartAnchorEl(null);
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -173,6 +199,30 @@ export default function App() {
           >
             Search
           </Button>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              p: 2,
+            }}
+          >
+            <IconButton onClick={handleCartClick}>
+              <Badge badgeContent={cart.length} color="secondary">
+                <ShoppingCartIcon />
+              </Badge>
+            </IconButton>
+            <IconButton
+              color="secondary"
+              onClick={() => {
+                if (lastOrder) {
+                  setShowOrderSummary((prev) => !prev);
+                }
+              }}
+            >
+              <HistoryIcon />
+            </IconButton>
+          </Box>
+
         </Toolbar>
       </AppBar>
 
@@ -273,6 +323,7 @@ export default function App() {
           </Typography>
         )}
       </Container>
+      
       {showOrderSummary && lastOrder && (
   <Container maxWidth="md" sx={{ mt: 4 }}>
     <Typography variant="h5" gutterBottom>
@@ -280,109 +331,42 @@ export default function App() {
     </Typography>
 
     <Paper sx={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          textAlign: "left",
-        }}
-      >
-        <thead style={{ background: "#1976d2", color: "#fff" }}>
-          <tr>
-            <th style={{ padding: "8px" }}>Brand</th>
-            <th style={{ padding: "8px" }}>Ingredient</th>
-            <th style={{ padding: "8px" }}>Quantity</th>
-            <th style={{ padding: "8px" }}>Price</th>
-            <th style={{ padding: "8px" }}>Source</th>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ background: "#f0f0f0" }}>
+            <th style={{ padding: 8, border: "1px solid #ddd" }}>Brand</th>
+            <th style={{ padding: 8, border: "1px solid #ddd" }}>Ingredient</th>
+            <th style={{ padding: 8, border: "1px solid #ddd" }}>Quantity</th>
+            <th style={{ padding: 8, border: "1px solid #ddd" }}>Price</th>
+            <th style={{ padding: 8, border: "1px solid #ddd" }}>Source</th>
           </tr>
         </thead>
         <tbody>
-          {lastOrder.items.map((item, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid #ddd" }}>
-              <td style={{ padding: "8px" }}>{item.brand}</td>
-              <td style={{ padding: "8px" }}>{item.ingredient}</td>
-              <td style={{ padding: "8px" }}>{item.quantity}</td>
-              <td style={{ padding: "8px" }}>₹{item.price * item.quantity}</td>
-              <td style={{ padding: "8px" }}>{item.store}</td>
+          {lastOrder.items.map((item, idx) => (
+            <tr key={idx}>
+              <td style={{ padding: 8, border: "1px solid #ddd" }}>{item.brand}</td>
+              <td style={{ padding: 8, border: "1px solid #ddd" }}>{item.ingredient}</td>
+              <td style={{ padding: 8, border: "1px solid #ddd" }}>{item.quantity}</td>
+              <td style={{ padding: 8, border: "1px solid #ddd" }}>₹{item.price * item.quantity}</td>
+              <td style={{ padding: 8, border: "1px solid #ddd" }}>{item.store}</td>
             </tr>
           ))}
+          <tr>
+            <td colSpan={3} style={{ padding: 8, fontWeight: "bold", border: "1px solid #ddd" }}>
+              Grand Total
+            </td>
+            <td style={{ padding: 8, fontWeight: "bold", border: "1px solid #ddd" }}>
+              ₹{lastOrder.total}
+            </td>
+            <td style={{ border: "1px solid #ddd" }}></td>
+          </tr>
         </tbody>
       </table>
     </Paper>
-
-    <Typography
-      variant="h6"
-      sx={{ textAlign: "right", mt: 2 }}
-    >
-      Grand Total: ₹{lastOrder.total}
-    </Typography>
   </Container>
 )}
 
-      {/* CART PANEL */}
-      {cart.length > 0 && (
-        <Paper
-          sx={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            p: 2,
-            zIndex: 999,
-          }}
-          elevation={3}
-        >
-          <Typography variant="h6">🛒 Cart</Typography>
-          {cart.map((item, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                my: 1,
-                flexWrap: "wrap",
-              }}
-            >
-              <img
-                src={item.img}
-                width={30}
-                height={30}
-                alt=""
-                style={{ borderRadius: 4 }}
-              />
-              <Typography sx={{ flexGrow: 1 }}>
-                {item.brand} - {item.ingredient}
-              </Typography>
-              <Input
-                type="number"
-                value={item.quantity}
-                onChange={(e) =>
-                  updateQuantity(idx, parseInt(e.target.value) || 1)
-                }
-                sx={{ width: 60 }}
-              />
-              <Typography>₹{item.price * item.quantity}</Typography>
-              <Button
-                size="small"
-                onClick={() => removeFromCart(idx)}
-              >
-                Remove
-              </Button>
-            </Box>
-          ))}
-          <Typography sx={{ mt: 1 }}>
-            Total: ₹{totalCost}
-          </Typography>
-          <Button
-            variant="contained"
-            sx={{ mt: 2 }}
-            onClick={() => setCheckoutOpen(true)}
-          >
-            Checkout
-          </Button>
-        </Paper>
-      )}
+
 
       {/* BRAND SELECTION DIALOG */}
       <Dialog open={showBrands} onClose={() => setShowBrands(false)}>
@@ -429,26 +413,26 @@ export default function App() {
         </DialogContent>
         <DialogActions>
           <Button
-  variant="contained"
-  onClick={() => {
-    setCheckoutOpen(false);
-    setPaymentSuccess(true);
+            variant="contained"
+            onClick={() => {
+              setCheckoutOpen(false);
+              setPaymentSuccess(true);
 
-    // Save order details
-    setLastOrder({
-      items: cart,
-      total: totalCost,
-    });
+              // Save order details
+              setLastOrder({
+                items: cart,
+                total: totalCost,
+              });
 
-    // Clear all data
-    setCart([]);
-    setRecipeName(null);
-    setInstructions([]);
-    setIngredients([]);
-  }}
->
-  Pay Now
-</Button>
+              // Clear all data
+              setCart([]);
+              setRecipeName(null);
+              setInstructions([]);
+              setIngredients([]);
+            }}
+          >
+            Pay Now
+          </Button>
 
         </DialogActions>
       </Dialog>
@@ -459,20 +443,125 @@ export default function App() {
         onClose={() => setPaymentSuccess(false)}
       >
         <Alert severity="success" sx={{ width: "100%" }}>
-          Payment completed successfully! 🎉
+          Payment completed successfully!
         </Alert>
       </Snackbar>
-      {paymentSuccess && (
-  <Box sx={{ mt: 4, textAlign: "center" }}>
-    <Button
-      variant="contained"
-      onClick={() => setShowOrderSummary(true)}
-    >
-      View My Order
-    </Button>
-  </Box>
-)}
+      
+      <Popover
+        open={cartOpen}
+        anchorEl={cartAnchorEl}
+        onClose={handleCartClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+      >
+        <Box sx={{ p: 2, minWidth: 300 }}>
+          <Typography variant="h6" gutterBottom>
+            Your Cart
+          </Typography>
 
+          {cart.length === 0 ? (
+            <Typography variant="body2">Cart is empty.</Typography>
+          ) : (
+            <>
+
+              {Object.entries(cartGroupedByStore).map(([store, items]) => (
+                <Box key={store} sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                    {store}
+                  </Typography>
+
+                  {items.map((item, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 1,
+                        mt: 1,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <img
+                          src={item.img}
+                          alt={item.ingredient}
+                          width={30}
+                          height={30}
+                          style={{ borderRadius: 4 }}
+                        />
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                            {item.ingredient}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            ₹{item.price} x {item.quantity}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            =     ₹{item.price * item.quantity}
+                          </Typography>
+
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Input
+                          size="small"
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateQuantity(
+                              cart.findIndex(
+                                (p) =>
+                                  p.ingredient === item.ingredient &&
+                                  p.brand === item.brand &&
+                                  p.store === item.store
+                              ),
+                              parseInt(e.target.value) || 1
+                            )
+                          }
+                          sx={{ width: 50 }}
+                        />
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => {
+                            removeFromCart(
+                              cart.findIndex(
+                                (p) =>
+                                  p.ingredient === item.ingredient &&
+                                  p.brand === item.brand &&
+                                  p.store === item.store
+                              )
+                            );
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              ))}
+              <Typography sx={{ mt: 2, fontWeight: "bold" }}>
+                Total: ₹{totalCost}
+              </Typography>
+
+              <Button
+                variant="contained"
+                sx={{ mt: 2 }}
+                fullWidth
+                onClick={() => {
+                  setCheckoutOpen(true);
+                  handleCartClose();
+                }}
+              >
+                Checkout
+              </Button>
+            </>
+          )}
+        </Box>
+      </Popover>
     </Box>
   );
 }
