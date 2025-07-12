@@ -8,6 +8,7 @@ import {
   Input,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { FaMinus, FaPlus } from "react-icons/fa";
 
 export default function CartPopover({
   open,
@@ -84,23 +85,53 @@ export default function CartPopover({
                       </Box>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Input
-                        size="small"
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateQuantity(
-                            cart.findIndex(
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const idx = cart.findIndex(
                               (p) =>
                                 p.ingredient === item.ingredient &&
                                 p.brand === item.brand &&
                                 p.store === item.store
-                            ),
-                            parseInt(e.target.value) || 1
-                          )
-                        }
-                        sx={{ width: 50 }}
-                      />
+                            );
+                            const newQuantity = Math.max(item.quantity - 1, 1);
+                            updateQuantity(idx, newQuantity);
+                          }}
+                        >
+                          <FaMinus size={12} />
+                        </IconButton>
+                        <Input
+                          size="small"
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const idx = cart.findIndex(
+                              (p) =>
+                                p.ingredient === item.ingredient &&
+                                p.brand === item.brand &&
+                                p.store === item.store
+                            );
+                            updateQuantity(idx, parseInt(e.target.value) || 1);
+                          }}
+                          sx={{ width: 50 }}
+                          inputProps={{ min: 1 }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const idx = cart.findIndex(
+                              (p) =>
+                                p.ingredient === item.ingredient &&
+                                p.brand === item.brand &&
+                                p.store === item.store
+                            );
+                            updateQuantity(idx, item.quantity + 1);
+                          }}
+                        >
+                          <FaPlus size={12} />
+                        </IconButton>
+                      </Box>
                       <IconButton
                         sx={{ p: 1.5 }}
                         size="small"
